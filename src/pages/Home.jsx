@@ -6,7 +6,7 @@ import '../Css/home.css'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 const DEFAULT_BAR_IMAGE = "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?q=80"
-import { initMercadoPago, Wallet } from "@mercadopago/sdk-react";
+
 function Home() {
     const [bars, setBars] = useState([])
     const [showModal, setShowModal] = useState(false)
@@ -26,8 +26,6 @@ function Home() {
     const [selectedZone, setSelectedZone] = useState('')
     const [showZoneSelection, setShowZoneSelection] = useState(false)
     const [zonas, setZonas] = useState([])
-    const [id, setId] = useState(null)
-    initMercadoPago("TEST-7d3c069e-c9b4-42a1-b863-ad5c5784886c",{locale:"es-AR"});
     console.log(reservation)
     useEffect(() => {
         const getBares = async () => {
@@ -96,11 +94,51 @@ function Home() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        
+        console.log("handleSubmit")
+        // Validación del teléfono (9 dígitos sin contar código de país)
+        const phoneDigits = reservation.phone.replace(/\D/g, '').slice(2); // Elimina el código de país
+        if (phoneDigits.length < 9) {
+            setErrorAlert({ 
+                show: true, 
+                message: 'El número de teléfono debe tener al menos 9 dígitos' 
+            });
+            setTimeout(() => {
+                setErrorAlert({ show: false, message: '' });
+            }, 3000);
+            return;
+        }
+
+        // Add email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(reservation.email)) {
+            setErrorAlert({ 
+                show: true, 
+                message: 'Por favor, ingrese un correo electrónico válido' 
+            })
+            setTimeout(() => {
+                setErrorAlert({ show: false, message: '' })
+            }, 3000)
+            return
+        }
+
+        // Find the selected zone's name
+        const selectedZoneName = zonas.find(zona => zona.id === selectedZone)?.name || '';
+
         try {
+            // Combinar fecha y hora en formato ISO
             const fechaHora = `${reservation.date}T${reservation.time}:00`
-            const precioFinal = 1000;
             
+            // Add console.log before API call to verify data
+            console.log("About to make API call with data:", {
+                idBar: selectedBar?.id, // Add optional chaining
+                fecha: fechaHora,
+                cantidaDePersonas: parseInt(reservation.guests),
+                nombre: reservation.name,
+                mail: reservation.email,
+                phone: reservation.phone,
+                nameZona: selectedZoneName  // Send the zone name instead of ID
+            });
+
             const response = await reservationService.createReservation({
                 idBar: selectedBar?.id,
                 fecha: fechaHora,
@@ -108,28 +146,43 @@ function Home() {
                 nombre: reservation.name,
                 mail: reservation.email,
                 phone: reservation.phone,
-                nameZona: selectedZone || null,
-                precioFinal: precioFinal
+                nameZona: selectedZoneName  // Send the zone name instead of ID
             });
 
+            // Add console.log for API response
             console.log("API Response:", response);
             
-            if (response.data) {
-                setId(response.data);
-            } else {
-                console.error('No se recibió el ID de MercadoPago');
-                setErrorAlert({ 
-                    show: true, 
-                    message: 'Error al generar el pago' 
-                });
+            if (response.status === 201) {
+                setShowAlert(true)
+                // Close modal and alert after 3 seconds
+                setTimeout(() => {
+                    setShowModal(false)
+                    setShowAlert(false)
+                }, 3000)
+                
+                setReservation({
+                    date: '',
+                    time: '',
+                    guests: 1,
+                    name: '',
+                    email: '',
+                    phone: ''
+                })
             }
             
         } catch (error) {
-            console.error('Error completo:', error);
+            // Improve error logging
+            console.error('Error creating reservation:', {
+                message: error.response?.data?.message || error.message,
+                error
+            });
             setErrorAlert({ 
                 show: true, 
-                message: error.response?.data?.message || 'Error al crear la reservación'
-            });
+                message: error.response.data.message 
+            })
+            setTimeout(() => {
+                setErrorAlert({ show: false, message: '' })
+            }, 3000)
         }
     }
 
@@ -425,9 +478,8 @@ function Home() {
                                                 padding: '10px 20px'
                                             }}
                                         >
-                                            Pagar con Mercado Pago
+                                            Confirmar Reserva
                                         </button>
-                                        {id&&<Wallet initialization={{ preferenceId: `${id}` }} customization={{ texts:{ valueProp: 'smart_option'}}} />}
                                         {showAlert && (
                 <div className="alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" role="alert">
                     Reserva creada exitosamente
