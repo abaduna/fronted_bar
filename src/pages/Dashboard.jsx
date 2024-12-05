@@ -30,6 +30,8 @@ function Dashboard() {
   const [showZoneSelection, setShowZoneSelection] = useState(false);
   const [selectedZone, setSelectedZone] = useState('');
   const [zonas, setZonas] = useState([]);
+  const [showSecondModal, setShowSecondModal] = useState(false);
+  const [tableQuantity, setTableQuantity] = useState(1);
 
   const handleCreate = async () => {
     try {
@@ -37,7 +39,7 @@ function Dashboard() {
       setSuccess(false)
       if (selectedOption === 'crear-mesa') {
         setShowModal(true)
-      } else {
+      } else if (selectedOption === 'crear-zona') {
         setShowZonaModal(true)
       }
     } catch (error) {
@@ -49,13 +51,24 @@ function Dashboard() {
   const handleSubmitMesa = async (e) => {
     e.preventDefault()
     try {
-      const response = await barService.createMesa(mesaData)
-      if (response.status === 201) {
-        setSuccess(true)
-        setShowModal(false)
-        setMesaData({ idZona: '', idBar: Number(id), maximo: 0 })
-        setError(null)
+      // Create an array of promises for each table creation
+      const createPromises = Array(tableQuantity).fill().map(() => 
+        barService.createMesa(mesaData)
+      );
+
+      // Wait for all tables to be created
+      const responses = await Promise.all(createPromises);
+      
+      // Check if any response failed
+      if (responses.some(response => response.status !== 200)) {
+        throw new Error('Error creating one or more tables');
       }
+
+      setSuccess(true)
+      setShowModal(false)
+      setTableQuantity(1)
+      setError(null)
+      setShowSecondModal(true)
     } catch (error) {
       console.error('Error al crear mesa:', error)
       setError('Hubo un error al crear la mesa. Por favor, intente nuevamente.')
@@ -191,6 +204,7 @@ function Dashboard() {
                   value={selectedOption} 
                   onChange={(e) => setSelectedOption(e.target.value)}
                 >
+                  <option value="crear-mesa">Crear Mesa</option>
                   <option value="crear-zona">Crear Zona</option>
                 </select>
               </div>
@@ -227,14 +241,20 @@ function Dashboard() {
                 <form onSubmit={handleSubmitMesa}>
                   <div className="modal-body">
                     <div className="mb-3">
-                      <label className="form-label">ID de la Zona:</label>
-                      <input
-                        type="text"
+                      <label className="form-label">Zona:</label>
+                      <select
                         className="form-control bg-dark text-white border-secondary"
                         value={mesaData.idZona}
                         onChange={(e) => setMesaData({...mesaData, idZona: e.target.value})}
                         required
-                      />
+                      >
+                        <option value="">Seleccione una zona</option>
+                        {zonas.map((zona) => (
+                          <option key={zona.id} value={zona.name}>
+                            {zona.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="mb-3">
                       <label className="form-label">Máximo de Comensales:</label>
@@ -246,7 +266,19 @@ function Dashboard() {
                         required
                       />
                     </div>
+                    <div className="mb-3">
+                      <label className="form-label">Cantidad de Mesas:</label>
+                      <input
+                        type="number"
+                        className="form-control bg-dark text-white border-secondary"
+                        value={tableQuantity}
+                        onChange={(e) => setTableQuantity(+e.target.value)}
+                        min="1"
+                        required
+                      />
+                    </div>
                   </div>
+                  
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                       <i className="bi bi-x-circle me-2"></i>Cancelar
@@ -298,6 +330,9 @@ function Dashboard() {
             </div>
           </div>
         )}
+
+      
+
         <div className="container py-4">
         {showAlert && (
           <div className="alert fade show position-fixed top-0 start-50 translate-middle-x mt-3" 
@@ -382,7 +417,7 @@ function Dashboard() {
                     <tr key={item.id} className="border-bottom border-secondary">
                       <td className="px-4 py-3">
                         <i className="bi bi-clock me-2"></i>
-                        {item.fechaHora.split('T')[1]}
+                        {item.fechaHora?.split('T')[1] || 'No especificado'}
                       </td>
                       <td className="px-4 py-3">
                         <i className="bi bi-person me-2"></i>
@@ -390,7 +425,7 @@ function Dashboard() {
                       </td>
                       <td className="px-4 py-3">
                         <i className="bi bi-people me-2"></i>
-                        {item.cantidadDeSillasUtlizadas || 'No especificada'}
+                        {item.cantidad || 'No especificada'}
                       </td>
                       <td className="px-4 py-3">
                         <i className="bi bi-geo-alt me-2"></i>
@@ -412,7 +447,7 @@ function Dashboard() {
                           </button>
                           <a 
                             href={`https://wa.me/${item.phone}?text=${encodeURIComponent(
-                              `Hola me comunico del bar por tu reserva de la fecha ${new Date(item.fechaHora).toLocaleDateString()} y te comento que...`
+                              `Hola me comunico del bar por tu reserva de la fecha ${new Date(item.fechaHora || '').toLocaleDateString()} y te comento que...`
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"

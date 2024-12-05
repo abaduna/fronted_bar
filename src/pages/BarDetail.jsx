@@ -25,6 +25,36 @@ function BarDetail() {
   const [showZoneSelection, setShowZoneSelection] = useState(false)
   const [zonas, setZonas] = useState([])
   const [selectedZone, setSelectedZone] = useState('')
+  const [barInfo, setBarInfo] = useState(null)
+
+  const formatGpsUrl = (gpsString) => {
+    if (!gpsString) return '';
+    
+    // Split the GPS string by comma
+    const [latitude, longitude] = gpsString.split(',').map(coord => coord.trim());
+    
+    return `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3348.043606871386!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzLCsDQ0JzUwLjQiUyA2MMKwNDQnMDMuMyJX!5e0!3m2!1sen!2s!4v1650000000000!5m2!1sen!2s`;
+  }
+
+  useEffect(() => {
+    const fetchBarInfo = async () => {
+      try {
+        const response = await barService.getBarById(id)
+        setBarInfo(response.data)
+      } catch (error) {
+        console.error('Error fetching bar info:', error)
+        setErrorAlert({
+          show: true,
+          message: 'Error al cargar la información del bar'
+        })
+      }
+    }
+
+    if (id) {
+      fetchBarInfo()
+    }
+  }, [id])
+
   useEffect(() => {
     if (selectedDate) {
       console.log(selectedDate)
@@ -91,6 +121,16 @@ function BarDetail() {
       setAvailableTimeSlots(slots)
     } catch (error) {
       console.error('Error fetching schedule:', error)
+      if (error.response?.data?.message) {
+        setErrorAlert({
+          show: true,
+          message: error.response.data.message
+        })
+        setTimeout(() => {
+          setErrorAlert({ show: false, message: '' })
+        }, 3000)
+      }
+      setAvailableTimeSlots([])
     }
   }
 
@@ -122,7 +162,7 @@ function BarDetail() {
         phone: reservation.phone,
         nameZona: selectedZone || null
       }
-
+     
       const response = await reservationService.createReservation(reservationData)
       
       if (response.status === 201) {
@@ -152,229 +192,311 @@ function BarDetail() {
   }
 
   return (
-    <div className="container-fluid min-vh-100" 
-      style={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1572116469696-31de0f17cc34')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        position: 'relative'
-      }}>
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        zIndex: 1
-      }}></div>
-      
-      <div className="container py-5" style={{ position: 'relative', zIndex: 2 }}>
-        <h1 className="text-center mb-4">Detalles del Bar</h1>
+    <div className="container-fluid min-vh-100 p-0">
+      {/* Banner Section */}
+      <div 
+        className="position-relative" 
+        style={{
+          height: '300px',
+          backgroundImage: `url(${barInfo?.imagen || 'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?q=80&w=1829&auto=format&fit=crop'})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          marginBottom: '60px'
+        }}
+      >
+        <div 
+          className="position-absolute w-100 h-100" 
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.5)'
+          }}
+        />
+        <div 
+          className="position-absolute"
+          style={{
+            bottom: '-50px',
+            left: '50%',
+            transform: 'translateX(-50%)'
+          }}
+        >
+          <img 
+            src={barInfo?.logo || barInfo?.imagen} 
+            alt={barInfo?.name}
+            className="rounded-circle border border-4 border-white"
+            style={{
+              width: '150px',
+              height: '150px',
+              objectFit: 'cover',
+              backgroundColor: 'white'
+            }}
+          />
+        </div>
+      </div>
 
-        {/* Formulario de reserva */}
-        <div className="card shadow-sm hover-shadow transition mb-4">
-          <div className="card-body">
-            <h5 className="card-title h4 text-center fw-bold text-dark mb-4">Hacer una reserva</h5>
-            <form onSubmit={handleSubmit}>
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="form-label">Fecha</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={selectedDate}
-                    onChange={(e) => {
-                      setSelectedDate(e.target.value);
-                      setReservation({...reservation, date: e.target.value});
-                    }}
-                    required
-                    style={{
-                      cursor: 'pointer',
-                      padding: '0.75rem',
-                      borderRadius: '8px',
-                      border: '2px solid #e2e8f0',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onFocus={(e) => e.target.style.border = '2px solid #EC4899'}
-                    onBlur={(e) => e.target.style.border = '2px solid #e2e8f0'}
+      {/* Info Section */}
+      {barInfo && (
+        <div className="container">
+          <div className="row g-4">
+            {/* Bar Information - changed to half width */}
+            <div className="col-md-6">
+              <div className="card bg-transparent border-0">
+                <div className="card-body">
+                  <h2 className="card-title h3 mb-4 text-black text-center">{barInfo.name}</h2>
+                  <div className="text-black mb-4">
+                    <p className="mb-3">
+                      <i className="bi bi-geo-alt-fill me-2"></i>
+                      <strong>Ubicación:</strong> {barInfo.location}
+                    </p>
+                    <p className="mb-3 d-flex align-items-center">
+                      <i className="bi bi-telephone-fill me-2"></i>
+                      <strong>Teléfono:</strong> {barInfo.phone}
+                      <a
+                        href={`https://wa.me/${barInfo.phone?.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm ms-2"
+                        style={{
+                          backgroundColor: '#25D366',
+                          color: 'white'
+                        }}
+                      >
+                        <i className="bi bi-whatsapp me-1"></i>
+                        WhatsApp
+                      </a>
+                    </p>
+                  </div>
+                  <div className="text-black">
+                    <h5 className="h6 mb-2">Descripción</h5>
+                    <p className="opacity-75">{barInfo.descripcionLarga}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Google Maps iframe - new column */}
+            <div className="col-md-6">
+              <div className="card h-100">
+                <div className="card-body p-0">
+                  <iframe
+                    src={formatGpsUrl(barInfo?.localizacionGps)}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, minHeight: "300px" }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
                   />
                 </div>
-                <div className="col-md-6">
-                  <label className="form-label">Hora</label>
-                  <select
-                    className="form-control"
-                    value={reservation.time}
-                    onChange={(e) => setReservation({...reservation, time: e.target.value})}
-                    required
-                  >
-                    <option value="">Seleccione una hora</option>
-                    {availableTimeSlots.map((timeSlot, index) => (
-                      <option key={index} value={timeSlot}>{timeSlot}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Número de personas</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min="1"
-                    value={reservation.guests}
-                    onChange={(e) => setReservation({...reservation, guests: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Nombre</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={reservation.name}
-                    onChange={(e) => setReservation({...reservation, name: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    value={reservation.email}
-                    onChange={(e) => setReservation({...reservation, email: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Teléfono</label>
-                  <PhoneInput
-                    country={'arg'}
-                    value={reservation.phone}
-                    onChange={(phone) => setReservation({...reservation, phone: phone})}
-                    inputStyle={{
-                      width: '100%',
-                      height: '40px',
-                      borderRadius: '8px',
-                      border: '2px solid #e2e8f0',
-                      transition: 'all 0.3s ease',
-                      ':focus': {
-                        border: '2px solid #EC4899'
-                      }
-                    }}
-                    containerStyle={{
-                      border: 'none'
-                    }}
-                    buttonStyle={{
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '8px 0 0 8px',
-                      backgroundColor: 'white'
-                    }}
-                    inputProps={{
-                      className: 'form-control'
-                    }}
-                    isValid={(value, country) => {
-                      return value.length >= 11;
-                    }}
-                    required
-                  />
-                </div>
-                {!showZoneSelection &&  <button
-                                            type="button"
-                                            className="btn w-100"
-                                            onClick={handleZoneButtonClick}
-                                            style={{
-                                                background: 'linear-gradient(to right, #8B5CF6, #EC4899)',
-                                                color: 'white',
-                                                border: 'none',
-                                                padding: '10px 20px'
-                                            }}
-                                        >
-                                            <i className="bi bi-geo-alt me-2"></i>
-                                            Preferencia de zona
-                                        </button>}
-                                      
-                                        
-                                        {showZoneSelection && (
-                                            <div className="col-12">
-                                                <label className="form-label">Selecciona una zona</label>
-                                                <select
-                                                    className="form-control"
-                                                    value={selectedZone}
-                                                    onChange={(e) => setSelectedZone(e.target.value)}
-                                                    style={{
-                                                        cursor: 'pointer',
-                                                        padding: '0.75rem',
-                                                        borderRadius: '8px',
-                                                        border: '2px solid #e2e8f0',
-                                                        transition: 'all 0.3s ease'
-                                                    }}
-                                                    onFocus={(e) => e.target.style.border = '2px solid #EC4899'}
-                                                    onBlur={(e) => e.target.style.border = '2px solid #e2e8f0'}
-                                                >
-                                                    <option value="">Elige una zona</option>
-                                                    {zonas.map((zona) => (
-                                                        <option key={zona.id} value={zona.name}>
-                                                            {zona.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        )}
-                <div className="col-12">
-                  <button 
-                    type="submit" 
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Formulario de reserva */}
+      <div className="card shadow-sm hover-shadow transition mb-4" style={{ backgroundColor: '#f8f9fa' }}>
+        <div className="card-body">
+          <h5 className="card-title h4 text-center fw-bold text-dark mb-4">Hacer una reserva</h5>
+          <form onSubmit={handleSubmit}>
+            <div className="row g-3">
+              <div className="col-md-6">
+                <label className="form-label">Fecha</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={selectedDate}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setReservation({...reservation, date: e.target.value});
+                  }}
+                  required
+                  style={{
+                    cursor: 'pointer',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onFocus={(e) => e.target.style.border = '2px solid #EC4899'}
+                  onBlur={(e) => e.target.style.border = '2px solid #e2e8f0'}
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Hora</label>
+                <select
+                  className="form-control"
+                  value={reservation.time}
+                  onChange={(e) => setReservation({...reservation, time: e.target.value})}
+                  required
+                >
+                  <option value="">Seleccione una hora</option>
+                  {availableTimeSlots.map((timeSlot, index) => (
+                    <option key={index} value={timeSlot}>{timeSlot}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Número de personas</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  min="1"
+                  value={reservation.guests}
+                  onChange={(e) => setReservation({...reservation, guests: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Nombre</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={reservation.name}
+                  onChange={(e) => setReservation({...reservation, name: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={reservation.email}
+                  onChange={(e) => setReservation({...reservation, email: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Teléfono</label>
+                <PhoneInput
+                  country={'arg'}
+                  value={reservation.phone}
+                  onChange={(phone) => setReservation({...reservation, phone: phone})}
+                  inputStyle={{
+                    width: '100%',
+                    height: '40px',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    transition: 'all 0.3s ease',
+                    ':focus': {
+                      border: '2px solid #EC4899'
+                    }
+                  }}
+                  containerStyle={{
+                    border: 'none'
+                  }}
+                  buttonStyle={{
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '8px 0 0 8px',
+                    backgroundColor: 'white'
+                  }}
+                  inputProps={{
+                    className: 'form-control'
+                  }}
+                  isValid={(value, country) => {
+                    return value.length >= 11;
+                  }}
+                  required
+                />
+              </div>
+              {/* Zone selection button and dropdown */}
+              <div className="col-12">
+                {!showZoneSelection && (
+                  <button
+                    type="button"
                     className="btn w-100"
+                    onClick={handleZoneButtonClick}
                     style={{
                       background: 'linear-gradient(to right, #8B5CF6, #EC4899)',
                       color: 'white',
                       border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
                       padding: '10px 20px'
                     }}
                   >
-                    <i className="bi bi-calendar-check me-2"></i>
-                    Confirmar Reserva
+                    <i className="bi bi-geo-alt me-2"></i>
+                    Preferencia de zona
                   </button>
-                </div>
+                )}
+                
+                {showZoneSelection && (
+                  <>
+                    <label className="form-label">Selecciona una zona</label>
+                    <select
+                      className="form-control"
+                      value={selectedZone}
+                      onChange={(e) => setSelectedZone(e.target.value)}
+                      style={{
+                        cursor: 'pointer',
+                        padding: '0.75rem',
+                        borderRadius: '8px',
+                        border: '2px solid #e2e8f0',
+                        transition: 'all 0.3s ease'
+                      }}
+                      onFocus={(e) => e.target.style.border = '2px solid #EC4899'}
+                      onBlur={(e) => e.target.style.border = '2px solid #e2e8f0'}
+                    >
+                      <option value="">Elige una zona</option>
+                      {zonas.map((zona) => (
+                        <option key={zona.id} value={zona.name}>
+                          {zona.name}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
               </div>
-            </form>
-          </div>
+              <div className="col-12">
+                <button 
+                  type="submit" 
+                  className="btn w-100"
+                  style={{
+                    background: 'linear-gradient(to right, #8B5CF6, #EC4899)',
+                    color: 'white',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '10px 20px'
+                  }}
+                >
+                  <i className="bi bi-calendar-check me-2"></i>
+                  Confirmar Reserva
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-
-        {/* Alerts */}
-        {showAlert && (
-          <div className="alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" role="alert">
-            Reserva creada exitosamente
-            <button type="button" className="btn-close" onClick={() => setShowAlert(false)} aria-label="Close"></button>
-          </div>
-        )}
-        {errorAlert.show && (
-          <div 
-            className="alert fade show position-fixed top-0 start-50 translate-middle-x mt-3" 
-            role="alert"
-            style={{
-              background: 'linear-gradient(to right, #8B5CF6, #EC4899)',
-              color: 'white',
-              borderRadius: '8px',
-              padding: '1rem 2rem',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-              zIndex: 9999
-            }}
-          >
-            <i className="bi bi-exclamation-circle me-2"></i>
-            {errorAlert.message}
-            <button 
-              type="button" 
-              className="btn-close btn-close-white" 
-              onClick={() => setErrorAlert({ show: false, message: '' })} 
-              aria-label="Close"
-            ></button>
-          </div>
-        )}
       </div>
+
+      {/* Alerts */}
+      {showAlert && (
+        <div className="alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" role="alert">
+          Reserva creada exitosamente
+          <button type="button" className="btn-close" onClick={() => setShowAlert(false)} aria-label="Close"></button>
+        </div>
+      )}
+      {errorAlert.show && (
+        <div 
+          className="alert fade show position-fixed top-0 start-50 translate-middle-x mt-3" 
+          role="alert"
+          style={{
+            background: 'linear-gradient(to right, #8B5CF6, #EC4899)',
+            color: 'white',
+            borderRadius: '8px',
+            padding: '1rem 2rem',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            zIndex: 9999
+          }}
+        >
+          <i className="bi bi-exclamation-circle me-2"></i>
+          {errorAlert.message}
+          <button 
+            type="button" 
+            className="btn-close btn-close-white" 
+            onClick={() => setErrorAlert({ show: false, message: '' })} 
+            aria-label="Close"
+          ></button>
+        </div>
+      )}
     </div>
   )
 }

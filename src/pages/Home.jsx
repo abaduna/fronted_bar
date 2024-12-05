@@ -83,6 +83,15 @@ function Home() {
         } catch (error) {
             console.error('Error fetching schedule:', error)
             setAvailableTimeSlots([])
+            if (error.response?.status === 400) {
+                setErrorAlert({ 
+                    show: true, 
+                    message: error.response.data.message || 'No hay horarios disponibles para la fecha seleccionada'
+                })
+                setTimeout(() => {
+                    setErrorAlert({ show: false, message: '' })
+                }, 3000)
+            }
         }
     }
 
@@ -146,20 +155,21 @@ function Home() {
                 nombre: reservation.name,
                 mail: reservation.email,
                 phone: reservation.phone,
-                nameZona: selectedZoneName  // Send the zone name instead of ID
+                nameZona: selectedZoneName
             });
 
-            // Add console.log for API response
-            console.log("API Response:", response);
-            
-            if (response.status === 201) {
-                setShowAlert(true)
+            console.log("Full API Response:", response);
+
+            if (response.status === 200 && response.data) {
+                setShowAlert(true);
                 // Close modal and alert after 3 seconds
                 setTimeout(() => {
-                    setShowModal(false)
-                    setShowAlert(false)
-                }, 3000)
+                    setShowModal(false);
+                    setShowAlert(false);
+                    setShowZoneSelection(false);
+                }, 3000);
                 
+                // Reset form
                 setReservation({
                     date: '',
                     time: '',
@@ -167,22 +177,19 @@ function Home() {
                     name: '',
                     email: '',
                     phone: ''
-                })
+                });
+            } else {
+                throw new Error('Unexpected response format');
             }
-            
         } catch (error) {
-            // Improve error logging
-            console.error('Error creating reservation:', {
-                message: error.response?.data?.message || error.message,
-                error
-            });
+            console.error('Error details:', error);
             setErrorAlert({ 
                 show: true, 
-                message: error.response.data.message 
-            })
+                message: error.response?.data?.message || 'Error al crear la reserva'
+            });
             setTimeout(() => {
-                setErrorAlert({ show: false, message: '' })
-            }, 3000)
+                setErrorAlert({ show: false, message: '' });
+            }, 3000);
         }
     }
 
@@ -350,7 +357,7 @@ function Home() {
                                             }}
                                             required
                                         >
-                                            <option value="">Selecciona la hora</option>
+                                            <option value="">Antes tenes que seleccionar una fecha</option>
                                             {availableTimeSlots.map((timeSlot, index) => (
                                                 <option key={index} value={timeSlot}>
                                                     {timeSlot}

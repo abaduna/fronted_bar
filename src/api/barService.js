@@ -39,10 +39,10 @@ export const barService = {
   },
 
   createMesa: async (mesaData) => {
-    return await api.post('/api/mesas/crear', {
+    return await api.post('/api/mesas', {
       idZona: mesaData.idZona,
-      idBar: mesaData.idBar,
-      maximo: parseInt(mesaData.maximo)
+      cantidadDePersonas: parseInt(mesaData.maximo),
+      barId: mesaData.idBar
     });
   },
 
@@ -53,5 +53,10 @@ export const barService = {
   getZonas: async (barId) => {
     console.log(barId)
     return await api.get(`/zonas/ver/${barId}`)
+  },
+
+  getBarById: async (id) => {
+    const response = await api.get(`/bars/bar/${id}`)
+    return response
   }
 }

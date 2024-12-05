@@ -81,90 +81,156 @@ function Horarios() {
       }
     } catch (error) {
       console.error('Error:', error);
+      const errorMessage = error.response?.status === 400 
+        ? error.response.data.message 
+        : 'Error al guardar los horarios';
+
       setAlert({
         show: true,
-        message: 'Error al guardar los horarios',
+        message: errorMessage,
         type: 'danger'
       });
       
-      // Auto hide alert after 3 seconds
       setTimeout(() => {
         setAlert({ show: false, message: '', type: '' });
       }, 3000);
     }
   };
 
+  const eliminarHorario = (diaIndex, horarioIndex) => {
+    const nuevosHorarios = [...horariosPorDia];
+    nuevosHorarios[diaIndex].splice(horarioIndex, 1);
+    setHorariosPorDia(nuevosHorarios);
+  };
+
   return (
-    <div className="container p-4">
-      {alert.show && (
-        <div className={`alert alert-${alert.type} alert-dismissible fade show`} role="alert">
-          {alert.message}
-          <button 
-            type="button" 
-            className="btn-close" 
-            onClick={() => setAlert({ show: false, message: '', type: '' })}
-            aria-label="Close"
-          ></button>
-        </div>
-      )}
+    <div className="container-fluid min-vh-100" 
+      style={{
+        backgroundImage: `url('https://images.unsplash.com/photo-1572116469696-31de0f17cc34')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        position: 'relative'
+      }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        zIndex: 1
+      }}></div>
       
-      <h1 className="h2 mb-4">Horarios para ID: {id}</h1>
-      
-      {diasSemana.map((dia, index) => (
-        <div key={index} className="mb-3">
-          <button 
-            onClick={() => handleRowClick(index)}
-            className="btn btn-primary"
-          >
-            + {dia}
-          </button>
+      <div className="container py-5" style={{ position: 'relative', zIndex: 2 }}>
+        <div className="card bg-dark bg-opacity-75 text-white border-0 p-4">
+          <h1 className="h2 mb-4 text-white">Grilla de horarios</h1>
           
-          {expandedRows[index] && (
-            <div className="mt-2">
-              {horariosPorDia[index].map((horario, horarioIndex) => (
-                <div key={horarioIndex} className="row g-3 mb-2">
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label className="form-label">Inicio</label>
-                      <input 
-                        type="time" 
-                        className="form-control"
-                        value={horario.inicio}
-                        onChange={(e) => handleHorarioChange(index, horarioIndex, 'inicio', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label className="form-label">Fin</label>
-                      <input 
-                        type="time" 
-                        className="form-control"
-                        value={horario.fin}
-                        onChange={(e) => handleHorarioChange(index, horarioIndex, 'fin', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
+          {diasSemana.map((dia, index) => (
+            <div key={index} className="mb-3">
               <button 
-                className="btn btn-secondary mt-2"
-                onClick={() => agregarHorario(index)}
+                onClick={() => handleRowClick(index)}
+                className="btn"
+                style={{
+                  background: 'linear-gradient(to right, #8B5CF6, #EC4899)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px'
+                }}
               >
-                Agregar horario
+                <i className="bi bi-clock me-2"></i>{dia}
               </button>
+              
+              {expandedRows[index] && (
+                <div className="mt-3 card bg-dark bg-opacity-50 p-3 border-secondary">
+                  {horariosPorDia[index].map((horario, horarioIndex) => (
+                    <div key={horarioIndex} className="row g-3 mb-2">
+                      <div className="col-md-5">
+                        <div className="form-group">
+                          <label className="form-label text-white">Inicio</label>
+                          <input 
+                            type="time" 
+                            className="form-control bg-dark text-white border-secondary"
+                            value={horario.inicio}
+                            onChange={(e) => handleHorarioChange(index, horarioIndex, 'inicio', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-5">
+                        <div className="form-group">
+                          <label className="form-label text-white">Fin</label>
+                          <input 
+                            type="time" 
+                            className="form-control bg-dark text-white border-secondary"
+                            value={horario.fin}
+                            onChange={(e) => handleHorarioChange(index, horarioIndex, 'fin', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-2 d-flex align-items-end">
+                        <button 
+                          className="btn btn-danger mb-2"
+                          onClick={() => eliminarHorario(index, horarioIndex)}
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <button 
+                    className="btn mt-3"
+                    onClick={() => agregarHorario(index)}
+                    style={{
+                      background: 'linear-gradient(to right, #8B5CF6, #EC4899)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '10px 20px'
+                    }}
+                  >
+                    <i className="bi bi-plus-circle me-2"></i>Agregar horario
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {alert.show && (
+            <div className={`alert fade show position-fixed top-0 start-50 translate-middle-x mt-3`} 
+              style={{
+                background: alert.type === 'success' ? 'linear-gradient(to right, #10B981, #059669)' : 'linear-gradient(to right, #EF4444, #DC2626)',
+                color: 'white',
+                borderRadius: '8px',
+                padding: '1rem 2rem',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                zIndex: 9999
+              }}
+            >
+              <i className={`bi ${alert.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle'} me-2`}></i>
+              {alert.message}
+              <button 
+                type="button" 
+                className="btn-close btn-close-white" 
+                onClick={() => setAlert({ show: false, message: '', type: '' })}
+                aria-label="Close"
+              ></button>
             </div>
           )}
-        </div>
-      ))}
 
-      <button 
-        className="btn btn-success mt-4"
-        onClick={guardarHorarios}
-      >
-        Guardar Horarios
-      </button>
+          <button 
+            className="btn mt-4"
+            onClick={guardarHorarios}
+            style={{
+              background: 'linear-gradient(to right, #8B5CF6, #EC4899)',
+              color: 'white',
+              border: 'none',
+              padding: '10px 20px'
+            }}
+          >
+            <i className="bi bi-save me-2"></i>Guardar Horarios
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
