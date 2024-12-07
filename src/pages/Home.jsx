@@ -137,49 +137,36 @@ function Home() {
             // Combinar fecha y hora en formato ISO
             const fechaHora = `${reservation.date}T${reservation.time}:00`
             
-            // Add console.log before API call to verify data
-            console.log("About to make API call with data:", {
-                idBar: selectedBar?.id, // Add optional chaining
-                fecha: fechaHora,
-                cantidaDePersonas: parseInt(reservation.guests),
-                nombre: reservation.name,
-                mail: reservation.email,
-                phone: reservation.phone,
-                nameZona: selectedZoneName  // Send the zone name instead of ID
-            });
-
-            const response = await reservationService.createReservation({
+            // First create the reservation
+            const reservationResponse = await reservationService.createReservation({
                 idBar: selectedBar?.id,
                 fecha: fechaHora,
                 cantidaDePersonas: parseInt(reservation.guests),
                 nombre: reservation.name,
                 mail: reservation.email,
                 phone: reservation.phone,
-                nameZona: selectedZoneName
+                nameZona: selectedZoneName,
+                precioFinal: 100
+            
             });
 
-            console.log("Full API Response:", response);
+            // If reservation is successful, create Mercado Pago preference
+            if (reservationResponse?.data) {
+                try {
+                  
 
-            if (response.status === 200 && response.data) {
-                setShowAlert(true);
-                // Close modal and alert after 3 seconds
-                setTimeout(() => {
-                    setShowModal(false);
-                    setShowAlert(false);
-                    setShowZoneSelection(false);
-                }, 3000);
-                
-                // Reset form
-                setReservation({
-                    date: '',
-                    time: '',
-                    guests: 1,
-                    name: '',
-                    email: '',
-                    phone: ''
-                });
-            } else {
-                throw new Error('Unexpected response format');
+                    // Check if we have a successful response (status 200)
+                    if (reservationResponse.status === 200) {
+                        const redirectUrl = reservationResponse?.data;
+                        window.location.href = redirectUrl;
+                    }
+                } catch (mpError) {
+                    console.error('Error creating payment:', mpError);
+                    setErrorAlert({ 
+                        show: true, 
+                        message: 'Error al procesar el pago. Por favor, intente nuevamente.'
+                    });
+                }
             }
         } catch (error) {
             console.error('Error details:', error);
