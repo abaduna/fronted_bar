@@ -409,6 +409,7 @@ function Dashboard() {
                     <th className="px-4 py-3">Nombre</th>
                     <th className="px-4 py-3">Personas</th>
                     <th className="px-4 py-3">Zona</th>
+                    <th className="px-4 py-3">Estado</th>
                     <th className="px-4 py-3">Acciones</th>
                   </tr>
                 </thead>
@@ -430,6 +431,10 @@ function Dashboard() {
                       <td className="px-4 py-3">
                         <i className="bi bi-geo-alt me-2"></i>
                         {item.nameZona || 'No especificada'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <i className="bi bi-check-circle me-2"></i>
+                        {item.paymentStatus}
                       </td>
                       <td className="px-4 py-3">
                         <div className="d-flex gap-2">

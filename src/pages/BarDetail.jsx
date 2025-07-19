@@ -160,35 +160,48 @@ function BarDetail() {
         nombre: reservation.name,
         mail: reservation.email,
         phone: reservation.phone,
-        nameZona: selectedZone || null
+        nameZona: selectedZone || null,
+        precioFinal: 100
       }
      
       const response = await reservationService.createReservation(reservationData)
       
-      if (response.status === 201) {
-        setShowAlert(true)
-        setTimeout(() => {
-          setShowAlert(false)
-        }, 3000)
-        
-        setReservation({
-          date: '',
-          time: '',
-          guests: 1,
-          name: '',
-          email: '',
-          phone: ''
-        })
-      }
-    } catch (error) {
-      setErrorAlert({ 
-        show: true, 
-        message: error.response.data.message 
-      })
-      setTimeout(() => {
-        setErrorAlert({ show: false, message: '' })
-      }, 3000)
+      if (response?.data) {
+        try {
+          
+
+            // Check if we have a successful response (status 200)
+          if (response && typeof response.data === 'string') {
+  const redirectUrl = response.data;
+  console.log("Redirigiendo a:", redirectUrl);
+  window.location.href = redirectUrl;
+}
+
+        } catch (mpError) {
+            console.error('Error creating payment:', mpError);
+            setErrorAlert({ 
+                show: true, 
+                message: 'Error al procesar el pago. Por favor, intente nuevamente.'
+            });
+        }
+    }else{
+      throw new Error("Respuesta inesperada del servidor");
     }
+    } catch (error) {
+  console.error(error);
+  const errorMessage =
+    error?.response?.data?.message || 'Ocurrió un error inesperado. Por favor, intente nuevamente.';
+
+  setErrorAlert({ 
+    show: true, 
+    message: errorMessage 
+  });
+
+  setTimeout(() => {
+    setErrorAlert({ show: false, message: '' });
+  }, 3000);
+}
+
   }
 
   return (
