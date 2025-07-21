@@ -5,7 +5,8 @@ import BarDetail from './pages/BarDetail'
 import Dashboard from './pages/Dashboard'
 import ListaDashboard from './pages/ListaDashboard'
 import Horarios from './pages/Horarios'
-
+import CrearMesa from './pages/addMesa'
+import CrearZona from './pages/CrearZona'
 function App() {
   return (
     <>
@@ -27,6 +28,12 @@ function App() {
               <li className="nav-item">
                 <Link className="nav-link" to="/horarios/1">Horarios</Link>
               </li>
+              <li className="nav-item">
+                <Link className="nav-link" to="/add-mesa">mesa</Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link" to="/crear-zona">Crear Zona</Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -38,6 +45,9 @@ function App() {
         <Route path="/dashboard/:id" element={<Dashboard />} />
         <Route path="/lista/dashboard/:id" element={<ListaDashboard />} />
         <Route path="/horarios/:id" element={<Horarios />} />
+        <Route path="/add-mesa" element={<CrearMesa />} />
+        <Route path="/crear-zona" element={<CrearZona />} />
+        <Route path="*" element={<h2>404 Not Found</h2>} />
       </Routes>
     </>
   )

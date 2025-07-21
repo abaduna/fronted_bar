@@ -138,14 +138,15 @@ function Dashboard() {
   }, [id]);
 
   return (
-    <div className="container-fluid min-vh-100" 
+   <div className="container-fluid min-vh-100" 
       style={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1572116469696-31de0f17cc34')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        position: 'relative'
-      }}>
+  backgroundImage: `url('/barfondo.webp')`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundAttachment: 'fixed',
+  position: 'relative'
+}}
+>
       <div style={{
         position: 'absolute',
         top: 0,
