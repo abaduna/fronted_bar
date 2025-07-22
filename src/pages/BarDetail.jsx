@@ -40,6 +40,7 @@ function BarDetail() {
     const fetchBarInfo = async () => {
       try {
         const response = await barService.getBarById(id)
+        console.log(response.data)
         setBarInfo(response.data)
       } catch (error) {
         console.error('Error fetching bar info:', error)
@@ -207,15 +208,17 @@ function BarDetail() {
   return (
     <div className="container-fluid min-vh-100 p-0">
       {/* Banner Section */}
-      <div 
-        className="position-relative" 
-        style={{
-          height: '300px',
-          backgroundImage: `url(${barInfo?.imagen || 'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?q=80&w=1829&auto=format&fit=crop'})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          marginBottom: '60px'
-        }}
+     {barInfo?.banerUrl && ( <div 
+      className="position-relative"
+  style={{
+    height: '300px',
+    backgroundImage: `url("http://localhost:8081${barInfo?.banerUrl}")`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    marginBottom: '60px',
+  
+  }}
+
       >
         <div 
           className="position-absolute w-100 h-100" 
@@ -232,7 +235,7 @@ function BarDetail() {
           }}
         >
           <img 
-            src={barInfo?.logo || barInfo?.imagen} 
+            src={`http://localhost:8081${barInfo?.imagen}`} 
             alt={barInfo?.name}
             className="rounded-circle border border-4 border-white"
             style={{
@@ -243,7 +246,7 @@ function BarDetail() {
             }}
           />
         </div>
-      </div>
+      </div>)}
 
       {/* Info Section */}
       {barInfo && (
