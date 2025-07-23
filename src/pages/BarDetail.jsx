@@ -27,14 +27,10 @@ function BarDetail() {
   const [selectedZone, setSelectedZone] = useState('')
   const [barInfo, setBarInfo] = useState(null)
 
-  const formatGpsUrl = (gpsString) => {
-    if (!gpsString) return '';
-    
-    // Split the GPS string by comma
-    const [latitude, longitude] = gpsString.split(',').map(coord => coord.trim());
-    
-    return `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3348.043606871386!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzLCsDQ0JzUwLjQiUyA2MMKwNDQnMDMuMyJX!5e0!3m2!1sen!2s!4v1650000000000!5m2!1sen!2s`;
-  }
+const formatGpsUrl = (coords) => {
+  if (!coords) return '';
+  return `https://www.google.com/maps?q=${coords}&output=embed`;
+};
 
   useEffect(() => {
     const fetchBarInfo = async () => {
@@ -292,15 +288,15 @@ function BarDetail() {
             <div className="col-md-6">
               <div className="card h-100">
                 <div className="card-body p-0">
-                  <iframe
-                    src={formatGpsUrl(barInfo?.localizacionGps)}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0, minHeight: "300px" }}
-                    allowFullScreen=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
+                 <iframe
+  src={formatGpsUrl(barInfo?.localizacionGps)}
+  width="100%"
+  height="100%"
+  style={{ border: 0, minHeight: "300px" }}
+  allowFullScreen=""
+  loading="lazy"
+  referrerPolicy="no-referrer-when-downgrade"
+/>
                 </div>
               </div>
             </div>

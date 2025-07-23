@@ -102,6 +102,32 @@ function Horarios() {
     nuevosHorarios[diaIndex].splice(horarioIndex, 1);
     setHorariosPorDia(nuevosHorarios);
   };
+useEffect(() => {
+  api.get(`/api/schedule/bars/${id}/schedule`)
+    .then(res => {
+      const data = res.data;
+
+      const horariosIniciales = Array(7).fill().map(() => []);
+      const expandedIniciales = Array(7).fill(false);
+
+      data.forEach(dia => {
+        if (dia.timeRanges) {
+          horariosIniciales[dia.dayOfWeek] = dia.timeRanges.map(rango => ({
+            inicio: rango.startTime,
+            fin: rango.endTime
+          }));
+          expandedIniciales[dia.dayOfWeek] = true; // abrir por defecto
+        }
+      });
+
+      setHorariosPorDia(horariosIniciales);
+      setExpandedRows(expandedIniciales);
+    })
+    .catch(err => {
+      console.error("Error al obtener los horarios:", err);
+    });
+}, [id]);
+
 
   return (
     <div className="container-fluid min-vh-100" 
