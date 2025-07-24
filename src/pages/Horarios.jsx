@@ -1,24 +1,25 @@
-import { useParams } from 'react-router-dom'
+
 import { useState, useEffect } from 'react'
 import api from '../api/config'
 
 function Horarios() {
-  const { id } = useParams()
+const id = localStorage.getItem('barId') || '';
   const [horariosPorDia, setHorariosPorDia] = useState(
     Array(7).fill().map(() => [])
   )
   const [expandedRows, setExpandedRows] = useState(Array(7).fill(false))
   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
   
-  const diasSemana = [
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado',
-    'Domingo'
-  ]
+const diasSemana = [
+  'Domingo',
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado'
+]
+
 
   const handleRowClick = (index) => {
     const newExpandedRows = [...expandedRows]
@@ -58,13 +59,14 @@ function Horarios() {
       const horarios = obtenerHorariosFormateados()
       
       const response = await api.post(`/api/schedule/bars/${id}/weekly-schedule`, {
+        domingo: horarios.domingo || [],
         lunes: horarios.lunes || [],
         martes: horarios.martes || [],
         miercoles: horarios.miercoles || [],
         jueves: horarios.jueves || [],
         viernes: horarios.viernes || [],
         sabado: horarios.sabado || [],
-        domingo: horarios.domingo || []
+       
       })
 
       if (response.status === 200) {
@@ -111,12 +113,15 @@ useEffect(() => {
       const expandedIniciales = Array(7).fill(false);
 
       data.forEach(dia => {
+        // 🔥 Mapeo dayOfWeek 7 a 0 (domingo)
+        const index = dia.dayOfWeek === 7 ? 0 : dia.dayOfWeek;
+
         if (dia.timeRanges) {
-          horariosIniciales[dia.dayOfWeek] = dia.timeRanges.map(rango => ({
+          horariosIniciales[index] = dia.timeRanges.map(rango => ({
             inicio: rango.startTime,
             fin: rango.endTime
           }));
-          expandedIniciales[dia.dayOfWeek] = true; // abrir por defecto
+          expandedIniciales[index] = true;
         }
       });
 
@@ -127,6 +132,7 @@ useEffect(() => {
       console.error("Error al obtener los horarios:", err);
     });
 }, [id]);
+
 
 
   return (

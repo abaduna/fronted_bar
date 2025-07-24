@@ -1,9 +1,9 @@
-import { useParams } from 'react-router-dom';
+
 import { useState } from 'react';
 import api from '../api/config';
 
 function ListaDashboard() {
-  const { id } = useParams();
+const id = localStorage.getItem('barId') || '';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');

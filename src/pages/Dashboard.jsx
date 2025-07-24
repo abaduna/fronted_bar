@@ -4,7 +4,8 @@ import { barService } from "../api/barService"
 import '../Css/home.css'
 import api from '../api/config';
 function Dashboard() {
-  const { id } = useParams()
+  const id = localStorage.getItem('barId') || '';
+
   const [selectedOption, setSelectedOption] = useState('crear-mesa')
   const [error, setError] = useState(null)
   const [showModal, setShowModal] = useState(false)
